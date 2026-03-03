@@ -17,7 +17,7 @@ Compatible with any coding agent that supports skills. For agents that read from
 Clone or download this repo, then copy it into your project's `.claude/skills/` directory:
 
 ```bash
-git clone https://github.com/your-org/drawio-diagram-skill.git
+git clone https://github.com/splatura/drawio-diagram-skill.git
 cp -r drawio-diagram-skill .claude/skills/drawio-diagram
 ```
 
@@ -62,3 +62,7 @@ drawio-diagram/
     render_template.html            # Browser template for rendering
     pyproject.toml                  # Python dependencies (playwright)
 ```
+
+## Credits
+
+This project is a draw.io port of the [Excalidraw Diagram Skill](https://github.com/coleam00/excalidraw-diagram-skill) created by [Cole Medin](https://github.com/coleam00). The original skill pioneered the "diagrams that argue visually" methodology, the evidence-based design patterns, and the render-view-fix validation loop that this project builds on. All credit for the core design approach goes to that work.
