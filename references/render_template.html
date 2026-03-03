@@ -5,53 +5,89 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #ffffff; overflow: hidden; }
-    #root { display: inline-block; }
+    #root { display: inline-block; position: relative; }
     #root svg { display: block; }
+    /* Ensure foreignObject HTML labels render properly */
+    #root div[style] { line-height: normal; }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
-  <script type="module">
-    import { exportToSvg } from "https://esm.sh/@excalidraw/excalidraw?bundle";
+  <script src="https://cdn.jsdelivr.net/npm/mxgraph@4.2.2/javascript/mxClient.min.js"></script>
+  <script>
+    // Signal module readiness once mxGraph is loaded
+    window.__moduleReady = (typeof mxGraph !== "undefined");
 
-    window.renderDiagram = async function(jsonData) {
+    window.renderDiagram = function(xmlString) {
       try {
-        const data = typeof jsonData === "string" ? JSON.parse(jsonData) : jsonData;
-        const elements = data.elements || [];
-        const appState = data.appState || {};
-        const files = data.files || {};
+        var container = document.getElementById("root");
+        container.innerHTML = "";
 
-        // Force white background in appState
-        appState.viewBackgroundColor = appState.viewBackgroundColor || "#ffffff";
-        appState.exportWithDarkMode = false;
+        // Parse the XML
+        var parser = new DOMParser();
+        var xmlDoc = parser.parseFromString(xmlString, "text/xml");
 
-        const svg = await exportToSvg({
-          elements: elements,
-          appState: {
-            ...appState,
-            exportBackground: true,
-          },
-          files: files,
-        });
+        // Find the mxGraphModel
+        var graphModelNode = xmlDoc.querySelector("mxGraphModel");
+        if (!graphModelNode) {
+          var diagramNode = xmlDoc.querySelector("diagram");
+          if (diagramNode && diagramNode.textContent.trim()) {
+            var encoded = diagramNode.textContent.trim();
+            try {
+              var decoded = atob(encoded);
+              var inflated = pako ? pako.inflate(decoded, { to: "string" }) : decoded;
+              var innerDoc = parser.parseFromString(inflated, "text/xml");
+              graphModelNode = innerDoc.querySelector("mxGraphModel");
+            } catch(e) {
+              var innerDoc2 = parser.parseFromString(diagramNode.textContent, "text/xml");
+              graphModelNode = innerDoc2.querySelector("mxGraphModel");
+            }
+          }
+        }
 
-        // Clear any previous render
-        const root = document.getElementById("root");
-        root.innerHTML = "";
-        root.appendChild(svg);
+        if (!graphModelNode) {
+          window.__renderComplete = true;
+          window.__renderError = "No mxGraphModel found in XML";
+          return { success: false, error: "No mxGraphModel found in XML" };
+        }
+
+        // Get background color
+        var bgColor = graphModelNode.getAttribute("background") || "#ffffff";
+        if (bgColor === "none") bgColor = "#ffffff";
+        document.body.style.background = bgColor;
+
+        // Create graph instance with HTML labels enabled
+        var graph = new mxGraph(container);
+        graph.setHtmlLabels(true);
+        graph.setEnabled(false);
+        graph.setCellsEditable(false);
+        graph.setCellsMovable(false);
+        graph.setCellsResizable(false);
+
+        // Import the model from XML
+        var codec = new mxCodec(graphModelNode.ownerDocument || xmlDoc);
+        codec.decode(graphModelNode, graph.getModel());
+
+        // Force a refresh
+        graph.refresh();
 
         window.__renderComplete = true;
         window.__renderError = null;
-        return { success: true, width: svg.getAttribute("width"), height: svg.getAttribute("height") };
+
+        // Get container dimensions for reporting
+        var bounds = container.getBoundingClientRect();
+        return {
+          success: true,
+          width: String(Math.ceil(bounds.width)),
+          height: String(Math.ceil(bounds.height))
+        };
       } catch (err) {
         window.__renderComplete = true;
         window.__renderError = err.message;
         return { success: false, error: err.message };
       }
     };
-
-    // Signal that the module is loaded and ready
-    window.__moduleReady = true;
   </script>
 </body>
 </html>

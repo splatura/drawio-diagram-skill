@@ -1,11 +1,11 @@
 ---
-name: excalidraw-diagram
-description: Create Excalidraw diagram JSON files that make visual arguments. Use when the user wants to visualize workflows, architectures, or concepts.
+name: drawio-diagram
+description: Create draw.io diagram XML files that make visual arguments. Use when the user wants to visualize workflows, architectures, or concepts.
 ---
 
-# Excalidraw Diagram Creator
+# Draw.io Diagram Creator
 
-Generate `.excalidraw` JSON files that **argue visually**, not just display information.
+Generate `.drawio` XML files that **argue visually**, not just display information.
 
 **Setup:** If the user asks you to set up this skill (renderer, dependencies, etc.), see `README.md` for instructions.
 
@@ -13,7 +13,7 @@ Generate `.excalidraw` JSON files that **argue visually**, not just display info
 
 **All colors and brand-specific styles live in one file:** `references/color-palette.md`. Read it before generating any diagram and use it as the single source of truth for all color choices — shape fills, strokes, text colors, evidence artifact backgrounds, everything.
 
-To make this skill produce diagrams in your own brand style, edit `color-palette.md`. Everything else in this file is universal design methodology and Excalidraw best practices.
+To make this skill produce diagrams in your own brand style, edit `color-palette.md`. Everything else in this file is universal design methodology and draw.io best practices.
 
 ---
 
@@ -160,7 +160,7 @@ Evidence artifacts, code snippets, and concrete examples within each section. Th
 
 ---
 
-## Design Process (Do This BEFORE Generating JSON)
+## Design Process (Do This BEFORE Generating XML)
 
 ### Step 0: Assess Depth Required
 Before anything else, determine if this needs to be:
@@ -195,42 +195,41 @@ For each concept, find the visual pattern that mirrors its behavior:
 For multi-concept diagrams: **each major concept must use a different visual pattern**. No uniform cards or grids.
 
 ### Step 4: Sketch the Flow
-Before JSON, mentally trace how the eye moves through the diagram. There should be a clear visual story.
+Before XML, mentally trace how the eye moves through the diagram. There should be a clear visual story.
 
-### Step 5: Generate JSON
-Only now create the Excalidraw elements. **See below for how to handle large diagrams.**
+### Step 5: Generate XML
+Only now create the draw.io elements. **See below for how to handle large diagrams.**
 
 ### Step 6: Render & Validate (MANDATORY)
-After generating the JSON, you MUST run the render-view-fix loop until the diagram looks right. This is not optional — see the **Render & Validate** section below for the full process.
+After generating the XML, you MUST run the render-view-fix loop until the diagram looks right. This is not optional — see the **Render & Validate** section below for the full process.
 
 ---
 
 ## Large / Comprehensive Diagram Strategy
 
-**For comprehensive or technical diagrams, you MUST build the JSON one section at a time.** Do NOT attempt to generate the entire file in a single pass. This is a hard constraint — Claude Code has a ~32,000 token output limit per response, and a comprehensive diagram easily exceeds that in one shot. Even if it didn't, generating everything at once leads to worse quality. Section-by-section is better in every way.
+**For comprehensive or technical diagrams, you MUST build the XML one section at a time.** Do NOT attempt to generate the entire file in a single pass. This is a hard constraint — Claude Code has a ~32,000 token output limit per response, and a comprehensive diagram easily exceeds that in one shot. Even if it didn't, generating everything at once leads to worse quality. Section-by-section is better in every way.
 
 ### The Section-by-Section Workflow
 
 **Phase 1: Build each section**
 
-1. **Create the base file** with the JSON wrapper (`type`, `version`, `appState`, `files`) and the first section of elements.
+1. **Create the base file** with the XML wrapper (`mxfile`, `diagram`, `mxGraphModel`, `root`, cells 0 and 1) and the first section of elements.
 2. **Add one section per edit.** Each section gets its own dedicated pass — take your time with it. Think carefully about the layout, spacing, and how this section connects to what's already there.
 3. **Use descriptive string IDs** (e.g., `"trigger_rect"`, `"arrow_fan_left"`) so cross-section references are readable.
-4. **Namespace seeds by section** (e.g., section 1 uses 100xxx, section 2 uses 200xxx) to avoid collisions.
-5. **Update cross-section bindings** as you go. When a new section's element needs to bind to an element from a previous section (e.g., an arrow connecting sections), edit the earlier element's `boundElements` array at the same time.
+4. **Add cross-section edges** as you go. When a new section's element needs to connect to an element from a previous section, add an edge with the appropriate `source`/`target` attributes.
 
 **Phase 2: Review the whole**
 
-After all sections are in place, read through the complete JSON and check:
-- Are cross-section arrows bound correctly on both ends?
+After all sections are in place, read through the complete XML and check:
+- Are cross-section arrows connected correctly via `source`/`target` IDs?
 - Is the overall spacing balanced, or are some sections cramped while others have too much whitespace?
-- Do IDs and bindings all reference elements that actually exist?
+- Do all IDs referenced by edges actually exist as vertices?
 
-Fix any alignment or binding issues before rendering.
+Fix any alignment or connection issues before rendering.
 
 **Phase 3: Render & validate**
 
-Now run the render-view-fix loop from the Render & Validate section. This is where you'll catch visual issues that aren't obvious from JSON — overlaps, clipping, imbalanced composition.
+Now run the render-view-fix loop from the Render & Validate section. This is where you'll catch visual issues that aren't obvious from XML — overlaps, clipping, imbalanced composition.
 
 ### Section Boundaries
 
@@ -245,9 +244,9 @@ Each section should be independently understandable: its elements, internal arro
 
 ### What NOT to Do
 
-- **Don't generate the entire diagram in one response.** You will hit the output token limit and produce truncated, broken JSON. Even if the diagram is small enough to fit, splitting into sections produces better results.
-- **Don't use a coding agent** to generate the JSON. The agent won't have sufficient context about the skill's rules, and the coordination overhead negates any benefit.
-- **Don't write a Python generator script.** The templating and coordinate math seem helpful but introduce a layer of indirection that makes debugging harder. Hand-crafted JSON with descriptive IDs is more maintainable.
+- **Don't generate the entire diagram in one response.** You will hit the output token limit and produce truncated, broken XML. Even if the diagram is small enough to fit, splitting into sections produces better results.
+- **Don't use a coding agent** to generate the XML. The agent won't have sufficient context about the skill's rules, and the coordination overhead negates any benefit.
+- **Don't write a Python generator script.** The templating and coordinate math seem helpful but introduce a layer of indirection that makes debugging harder. Hand-crafted XML with descriptive IDs is more maintainable.
 
 ---
 
@@ -280,7 +279,7 @@ Parent-child branching with connecting lines and free-floating text (no boxes ne
   │   └── label
   └── label
 ```
-Use `line` elements for the trunk and branches, free-floating text for labels.
+Use structural line edges (`endArrow=none;startArrow=none;`) for the trunk and branches, free-floating text for labels.
 
 ### Spiral/Cycle (Continuous Loop)
 Elements in sequence with arrow returning to start. Use for: feedback loops, iterative processes, evolution.
@@ -307,10 +306,10 @@ Two parallel structures with visual contrast. Use for: before/after, options, tr
 Visual whitespace or barrier between sections. Use for: phase changes, context resets, boundaries.
 
 ### Lines as Structure
-Use lines (type: `line`, not arrows) as primary structural elements instead of boxes:
+Use structural line edges (`endArrow=none;startArrow=none;`) as primary structural elements instead of boxes:
 - **Timelines**: Vertical or horizontal line with small dots (10-20px ellipses) at intervals, free-floating labels beside each dot
 - **Tree structures**: Vertical trunk line + horizontal branch lines, with free-floating text labels (no boxes needed)
-- **Dividers**: Thin dashed lines to separate sections
+- **Dividers**: Thin dashed lines to separate sections (`dashed=1;`)
 - **Flow spines**: A central line that elements relate to, rather than connecting boxes
 
 ```
@@ -330,17 +329,18 @@ Lines + free-floating text often creates a cleaner result than boxes + contained
 
 Choose shape based on what it represents—or use no shape at all:
 
-| Concept Type | Shape | Why |
-|--------------|-------|-----|
-| Labels, descriptions, details | **none** (free-floating text) | Typography creates hierarchy |
-| Section titles, annotations | **none** (free-floating text) | Font size/weight is enough |
-| Markers on a timeline | small `ellipse` (10-20px) | Visual anchor, not container |
-| Start, trigger, input | `ellipse` | Soft, origin-like |
-| End, output, result | `ellipse` | Completion, destination |
-| Decision, condition | `diamond` | Classic decision symbol |
-| Process, action, step | `rectangle` | Contained action |
-| Abstract state, context | overlapping `ellipse` | Fuzzy, cloud-like |
-| Hierarchy node | lines + text (no boxes) | Structure through lines |
+| Concept Type | Shape | Style Key |
+|--------------|-------|-----------|
+| Labels, descriptions, details | **none** (free-floating text) | `text;fillColor=none;strokeColor=none;` |
+| Section titles, annotations | **none** (free-floating text) | `text;fillColor=none;strokeColor=none;fontStyle=1;` |
+| Markers on a timeline | small `ellipse` (10-20px) | `shape=ellipse;perimeter=ellipsePerimeter;` |
+| Start, trigger, input | `ellipse` | `shape=ellipse;perimeter=ellipsePerimeter;` |
+| End, output, result | `ellipse` | `shape=ellipse;perimeter=ellipsePerimeter;` |
+| Decision, condition | `diamond` | `shape=rhombus;perimeter=rhombusPerimeter;` |
+| Process, action, step | `rectangle` | `rounded=1;` |
+| Abstract state, context | overlapping `ellipse` | `shape=ellipse;perimeter=ellipsePerimeter;` |
+| Database | `cylinder` | `shape=cylinder;` |
+| Hierarchy node | lines + text (no boxes) | structural edges + text cells |
 
 **Rule**: Default to no container. Add shapes only when they carry meaning. Aim for <30% of text elements to be inside containers.
 
@@ -364,19 +364,19 @@ Colors encode information, not decoration. Every color choice should come from `
 
 For clean, professional diagrams:
 
-### Roughness
-- `roughness: 0` — Clean, crisp edges. Use for modern/technical diagrams.
-- `roughness: 1` — Hand-drawn, organic feel. Use for brainstorming/informal diagrams.
+### Sketch Mode
+- `sketch=0` — Clean, crisp edges. Use for modern/technical diagrams.
+- `sketch=1` — Hand-drawn, organic feel. Use for brainstorming/informal diagrams.
 
 **Default to 0** for most professional use cases.
 
 ### Stroke Width
-- `strokeWidth: 1` — Thin, elegant. Good for lines, dividers, subtle connections.
-- `strokeWidth: 2` — Standard. Good for shapes and primary arrows.
-- `strokeWidth: 3` — Bold. Use sparingly for emphasis (main flow line, key connections).
+- `strokeWidth=1` — Thin, elegant. Good for lines, dividers, subtle connections.
+- `strokeWidth=2` — Standard. Good for shapes and primary arrows.
+- `strokeWidth=3` — Bold. Use sparingly for emphasis (main flow line, key connections).
 
 ### Opacity
-**Always use `opacity: 100` for all elements.** Use color, size, and stroke width to create hierarchy instead of transparency.
+**Always use `opacity=100` for all elements.** Use color, size, and stroke width to create hierarchy instead of transparency.
 
 ### Small Markers Instead of Shapes
 Instead of full shapes, use small dots (10-20px ellipses) as:
@@ -408,57 +408,63 @@ Position alone doesn't show relationships. If A relates to B, there must be an a
 
 ## Text Rules
 
-**CRITICAL**: The JSON `text` property contains ONLY readable words.
+**CRITICAL**: The `value` attribute contains ONLY readable words (or XML-escaped text for special characters).
 
-```json
-{
-  "id": "myElement1",
-  "text": "Start",
-  "originalText": "Start"
-}
+```xml
+<mxCell id="elem1" value="Start" style="..." vertex="1" parent="1">
 ```
 
-Settings: `fontSize: 16`, `fontFamily: 3`, `textAlign: "center"`, `verticalAlign: "middle"`
+Use `&#xa;` for newlines, `&quot;` for quotes, `&amp;` for ampersands.
+
+Settings: `fontSize=16`, `fontFamily=Courier New`, `align=center`, `verticalAlign=middle`
+
+**Key difference from other formats**: In draw.io, text is embedded in the shape's `value` attribute — there are no separate text elements bound to shapes. Standalone text uses `text;fillColor=none;strokeColor=none;` in the style.
 
 ---
 
-## JSON Structure
+## XML Structure
 
-```json
-{
-  "type": "excalidraw",
-  "version": 2,
-  "source": "https://excalidraw.com",
-  "elements": [...],
-  "appState": {
-    "viewBackgroundColor": "#ffffff",
-    "gridSize": 20
-  },
-  "files": {}
-}
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="agent" version="1.0">
+  <diagram name="Page-1" id="unique-id">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10"
+                  guides="1" tooltips="1" connect="1" arrows="1"
+                  fold="1" page="0" pageScale="1" pageWidth="1100"
+                  pageHeight="850" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <!-- All diagram elements go here with parent="1" -->
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
 ```
+
+**Required**: Cells `id="0"` (root) and `id="1" parent="0"` (default layer) must always be present.
 
 ## Element Templates
 
-See `references/element-templates.md` for copy-paste JSON templates for each element type (text, line, dot, rectangle, arrow). Pull colors from `references/color-palette.md` based on each element's semantic purpose.
+See `references/element-templates.md` for copy-paste XML templates for each element type (text, line, dot, rectangle, ellipse, diamond, arrow). Pull colors from `references/color-palette.md` based on each element's semantic purpose.
 
 ---
 
 ## Render & Validate (MANDATORY)
 
-You cannot judge a diagram from JSON alone. After generating or editing the Excalidraw JSON, you MUST render it to PNG, view the image, and fix what you see — in a loop until it's right. This is a core part of the workflow, not a final check.
+You cannot judge a diagram from XML alone. After generating or editing the draw.io XML, you MUST render it to PNG, view the image, and fix what you see — in a loop until it's right. This is a core part of the workflow, not a final check.
 
 ### How to Render
 
 ```bash
-cd .claude/skills/excalidraw-diagram/references && uv run python render_excalidraw.py <path-to-file.excalidraw>
+cd .claude/skills/drawio-diagram/references && LD_LIBRARY_PATH="/home/linuxbrew/.linuxbrew/lib:$LD_LIBRARY_PATH" uv run python render_drawio.py <path-to-file.drawio>
 ```
 
-This outputs a PNG next to the `.excalidraw` file. Then use the **Read tool** on the PNG to actually view it.
+This outputs a PNG next to the `.drawio` file. Then use the **Read tool** on the PNG to actually view it.
 
 ### The Loop
 
-After generating the initial JSON, run this cycle:
+After generating the initial XML, run this cycle:
 
 **1. Render & View** — Run the render script, then Read the PNG.
 
@@ -480,10 +486,10 @@ After generating the initial JSON, run this cycle:
 - Text too small to read at the rendered size
 - Overall composition feels lopsided or unbalanced
 
-**4. Fix** — Edit the JSON to address everything you found. Common fixes:
-- Widen containers when text is clipped
-- Adjust `x`/`y` coordinates to fix spacing and alignment
-- Add intermediate waypoints to arrow `points` arrays to route around elements
+**4. Fix** — Edit the XML to address everything you found. Common fixes:
+- Widen containers (increase `width` in `<mxGeometry>`) when text is clipped
+- Adjust `x`/`y` in `<mxGeometry>` to fix spacing and alignment
+- Add `<mxPoint>` waypoints inside edge `<Array as="points">` to route around elements
 - Reposition labels closer to the element they describe
 - Resize elements to rebalance visual weight across sections
 
@@ -503,7 +509,7 @@ The loop is done when:
 ### First-Time Setup
 If the render script hasn't been set up yet:
 ```bash
-cd .claude/skills/excalidraw-diagram/references
+cd .claude/skills/drawio-diagram/references
 uv sync
 uv run playwright install chromium
 ```
@@ -536,17 +542,19 @@ uv run playwright install chromium
 15. **Hierarchy**: Important elements are larger/more isolated
 
 ### Technical
-16. **Text clean**: `text` contains only readable words
-17. **Font**: `fontFamily: 3`
-18. **Roughness**: `roughness: 0` for clean/modern (unless hand-drawn style requested)
-19. **Opacity**: `opacity: 100` for all elements (no transparency)
+16. **Text clean**: `value` contains only readable words (with XML entities for special chars)
+17. **Font**: `fontFamily=Courier New`
+18. **Sketch mode**: `sketch=0` for clean/modern (unless hand-drawn style requested)
+19. **Opacity**: `opacity=100` for all elements (no transparency)
 20. **Container ratio**: <30% of text elements should be inside containers
+21. **Shape prefixes**: All non-rectangle shapes use `shape=` prefix (e.g., `shape=ellipse`, `shape=rhombus`)
+22. **Perimeters**: Shapes include matching `perimeter=` for correct arrow attachment
 
 ### Visual Validation (Render Required)
-21. **Rendered to PNG**: Diagram has been rendered and visually inspected
-22. **No text overflow**: All text fits within its container
-23. **No overlapping elements**: Shapes and text don't overlap unintentionally
-24. **Even spacing**: Similar elements have consistent spacing
-25. **Arrows land correctly**: Arrows connect to intended elements without crossing others
-26. **Readable at export size**: Text is legible in the rendered PNG
-27. **Balanced composition**: No large empty voids or overcrowded regions
+23. **Rendered to PNG**: Diagram has been rendered and visually inspected
+24. **No text overflow**: All text fits within its container
+25. **No overlapping elements**: Shapes and text don't overlap unintentionally
+26. **Even spacing**: Similar elements have consistent spacing
+27. **Arrows land correctly**: Arrows connect to intended elements without crossing others
+28. **Readable at export size**: Text is legible in the rendered PNG
+29. **Balanced composition**: No large empty voids or overcrowded regions
